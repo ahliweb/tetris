@@ -22,8 +22,9 @@ Proyek ini merupakan implementasi **Game Tetris klasik** menggunakan **HTML, CSS
 ---
 
 ## 🛠️ Struktur Folder
+
 tetris/
-├── index.html
+├── tetris.html
 └── README.md
 
 
