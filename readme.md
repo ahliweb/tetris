@@ -1,39 +1,47 @@
-# 🎮 Game Tetris by AhliWeb
+# 🎮 Game Tetris by AhliWeb - Tetris Statis (Basic Edition)
 
-Proyek ini merupakan implementasi **Game Tetris klasik** menggunakan **HTML, CSS, dan JavaScript murni**, dikembangkan sebagai bagian dari program **Ekskul Coding & AI Terpadu** oleh [AhliWeb.co.id](https://ahliweb.co.id).
-
----
-
-## 🚀 Fitur Utama
-- Tampilan klasik dengan grid 10x20.
-- Sistem skor otomatis.
-- Level dan kecepatan meningkat seiring waktu.
-- Desain responsif dan ringan.
-- Tanpa library eksternal (100% vanilla JS).
+Versi dasar **Game Tetris klasik** menggunakan **HTML, CSS, dan JavaScript** tanpa framework.  
+Dikembangkan oleh **PT Ahli Web Internasional** untuk program **Ekskul Coding & AI Terpadu**.
 
 ---
 
-## 🧠 Tujuan Pembelajaran
-- Memahami dasar **struktur kontrol (if, loop)**.
-- Menerapkan **array 2D dan pergerakan objek** di canvas/grid.
-- Belajar **event listener** dan **interval animation**.
-- Pengenalan konsep **game loop** dan **collision detection**.
+## 🚀 Tujuan Proyek
+Proyek ini bertujuan untuk:
+1. Mengenalkan logika dasar pemrograman melalui permainan interaktif.
+2. Melatih pemahaman **DOM**, **loop**, dan **event listener**.
+3. Menjadi dasar sebelum masuk ke versi **advance (Dart + Serverpod + Jaspr)**.
 
 ---
 
-## 🛠️ Struktur Folder
+## 📂 Struktur Folder
 
 tetris/
-├── tetris.html
-└── README.md
+└── statis/
+    ├── tetris.html
+    └── README.md
 
+---
+
+## 🧠 Konsep Utama
+- **Grid 10x20** untuk area permainan.  
+- **Blok tetrimino** bergerak menggunakan `keydown` event.  
+- **Score system** bertambah saat baris penuh dihapus.  
+- **Game over** ketika tumpukan blok mencapai atas layar.
 
 ---
 
 ## 💡 Pengembangan Lanjutan
-Versi berikutnya akan dikembangkan menggunakan **Dart + Serverpod + Jaspr + Flutter Web** untuk pembelajaran fullstack modern.
+Tahap berikutnya akan dibuat versi:
+- `tetris_advance/` menggunakan **Dart + Serverpod + Jaspr + Flutter Web**
+- Mendukung sistem login, leaderboard, dan multiplayer.
 
 ---
 
-## 📚 Lisensi
+## 👨‍💻 Author
+**Unggul Cahya Saputra**  
+Direktur Operasional — [PT Ahli Web Internasional](https://ahliweb.co.id)
+
+---
+
+## 📜 Lisensi
 MIT License © 2025 [AhliWeb.co.id](https://ahliweb.co.id)
