@@ -1,33 +1,39 @@
 # 🤝 Panduan Kontribusi (CONTRIBUTING.md)
 
-**Project:** 🎮 Tetris Statis (Basic Edition)  
-**Organization:** [PT Ahli Web Internasional](https://ahliweb.co.id)  
-**Author:** Unggul Cahya Saputra  
-**Program:** Ekskul Coding & AI Terpadu  
-**Lisensi:** MIT License  
+**Project:** 🎮 Tetris Statis (Basic Edition)
+**Organization:** [PT Ahli Web Internasional](https://ahliweb.co.id)
+**Author:** Unggul Cahya Saputra
+**Program:** Ekskul Coding & AI Terpadu
+**Lisensi:** MIT License
 
 ---
 
 ## 💬 Pendahuluan
-Terima kasih telah tertarik berkontribusi pada proyek **Tetris Statis**!  
+
+Terima kasih telah tertarik berkontribusi pada proyek **Tetris Statis**!
 Proyek ini bertujuan sebagai sarana belajar logika pemrograman dasar menggunakan **HTML, CSS, dan JavaScript**, serta akan dikembangkan ke versi lanjutan dengan **Dart + Serverpod + Jaspr + Flutter Web**.
 
 Kami menyambut kontribusi dalam bentuk:
-- 💡 Ide & saran perbaikan.
-- 🧱 Perbaikan bug dan optimalisasi kode.
-- 🎨 Penyempurnaan tampilan (UI/UX).
-- 📚 Dokumentasi dan tutorial tambahan.
+
+* 💡 Ide & saran perbaikan.
+* 🧱 Perbaikan bug dan optimalisasi kode.
+* 🎨 Penyempurnaan tampilan (UI/UX).
+* 📚 Dokumentasi dan tutorial tambahan.
 
 ---
 
 ## ⚙️ Persiapan Awal
-1. Pastikan kamu sudah memiliki akun GitHub.  
-2. *Fork* repositori ini: [https://github.com/ahliweb/tetris](https://github.com/ahliweb/tetris)  
+
+1. Pastikan kamu sudah memiliki akun GitHub.
+
+2. *Fork* repositori ini: [https://github.com/ahliweb/tetris](https://github.com/ahliweb/tetris)
+
 3. *Clone* hasil fork ke komputer lokal:
+
    ```bash
    git clone https://github.com/<username>/tetris.git
    cd tetris/statis
-````
+   ```
 
 4. Pastikan struktur awal sesuai:
 
@@ -37,6 +43,7 @@ Kami menyambut kontribusi dalam bentuk:
        ├── tetris.html
        └── README.md
    ```
+
 5. Gunakan editor yang nyaman (disarankan: **VS Code** atau **Cursor IDE**).
 
 ---
@@ -132,15 +139,3 @@ Kami menghargai setiap kontribusi, sekecil apa pun.
 Bersama kita bangun komunitas pembelajar yang **cerdas, beradab, dan berilmu**.
 
 > 🧩 *Bagian dari ekosistem edukasi digital AhliWeb.co.id – “Berkarya dengan Ilmu, Amanah, dan Akhlak Mulia.”*
-
-```
-
----
-
-📦 **Langkah upload ke repo GitHub:**
-1. Masuk ke repository `ahliweb/tetris`
-2. Klik **Add file → Create new file**
-3. Beri nama: `CONTRIBUTING.md`
-4. Salin isi di atas → klik **Commit new file**
-
----
