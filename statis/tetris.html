@@ -3,28 +3,47 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Tetris Sederhana</title>
+  <title>Tetris Sederhana - Improved Edition</title>
   <style>
     :root{--cell:28px;--cols:10;--rows:20}
     html,body{height:100%;margin:0;font-family:Inter, system-ui, Arial;background:linear-gradient(180deg,#0f172a,#071024);color:#e6eef8}
     .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:28px}
-    .board{display:grid;grid-template-columns:1fr 260px;gap:20px;align-items:start}
+    .board{display:grid;grid-template-columns:260px 1fr 260px;gap:20px;align-items:start}
+    @media(max-width:900px){.board{grid-template-columns:1fr;justify-items:center}}
     .game{background:#061025;padding:12px;border-radius:12px;box-shadow:0 8px 30px rgba(2,6,23,.7);position:relative}
     canvas#tetris{background:#041024;border:3px solid #00b4ff;box-shadow:0 0 15px rgba(0,180,255,0.4) inset, 0 0 10px rgba(0,180,255,0.3);border-radius:8px;display:block}
-    .overlay{position:absolute;left:12px;top:12px;width:calc(100% - 24px);height:calc(100% - 24px);display:flex;align-items:center;justify-content:center;pointer-events:none}
-    .overlay .box{background:rgba(3,6,12,0.85);border:2px solid rgba(255,255,255,0.06);padding:18px;border-radius:10px;color:#dff0ff;text-align:center;pointer-events:auto}
-    .overlay .box h2{margin:0 0 8px;font-size:18px}
-    .overlay .box p{margin:0 0 12px;color:#9fb9d6}
-    .overlay .box button{cursor:pointer}
+    .overlay{position:absolute;left:12px;top:12px;width:calc(100% - 24px);height:calc(100% - 24px);display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:10}
+    .overlay .box{background:rgba(3,6,12,0.95);border:2px solid rgba(255,255,255,0.06);padding:24px;border-radius:10px;color:#dff0ff;text-align:center;pointer-events:auto;max-width:400px}
+    .overlay .box h2{margin:0 0 12px;font-size:20px}
+    .overlay .box p{margin:0 0 16px;color:#9fb9d6;line-height:1.5}
+    .overlay .box button{cursor:pointer;margin:4px}
+    .overlay .box ul{text-align:left;margin:12px 0;padding-left:20px}
+    .overlay .box li{margin:6px 0;color:#9fb9d6}
     .side{width:260px}
     h1{font-size:18px;margin:0 0 8px}
     .panel{background:linear-gradient(180deg,#071733,#032033);padding:12px;border-radius:10px;margin-bottom:12px;color:#cfe8ff}
     .small{font-size:13px;color:#9fc6ff}
     .controls{display:flex;gap:8px;flex-wrap:wrap}
-    button{background:#0b2640;border:1px solid rgba(255,255,255,0.04);color:#dff0ff;padding:8px 10px;border-radius:8px}
+    button{background:#0b2640;border:1px solid rgba(255,255,255,0.04);color:#dff0ff;padding:8px 12px;border-radius:8px;cursor:pointer;transition:all 0.2s}
+    button:hover{background:#0d3050;transform:translateY(-1px)}
+    button:active{transform:translateY(0)}
+    button:disabled{opacity:0.5;cursor:not-allowed}
     .hint{font-size:13px;color:#9fb9d6;margin-top:6px}
-    .next-canvas{background:#041024;border-radius:8px;display:block;margin-top:8px;border:2px solid #555}
+    .next-canvas,.hold-canvas{background:#041024;border-radius:8px;display:block;margin-top:8px;border:2px solid #555}
     footer{font-size:12px;color:#8fb4d9;margin-top:6px;text-align:center}
+    .setting-item{display:flex;justify-content:space-between;align-items:center;margin:8px 0}
+    .toggle{width:48px;height:24px;background:#334;border-radius:12px;position:relative;cursor:pointer;transition:background 0.3s}
+    .toggle.active{background:#0a84ff}
+    .toggle span{position:absolute;width:20px;height:20px;background:#fff;border-radius:50%;top:2px;left:2px;transition:left 0.3s}
+    .toggle.active span{left:26px}
+    .stat-row{display:flex;justify-content:space-between;margin:4px 0;font-size:13px}
+    .touch-controls{display:none;margin-top:12px}
+    @media(max-width:768px){.touch-controls{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}}
+    .touch-btn{padding:16px;font-size:18px;touch-action:manipulation}
+    @keyframes lineClear{0%{opacity:1;background:rgba(255,255,255,0.8)}100%{opacity:0}}
+    .clearing-line{animation:lineClear 0.3s ease-out}
+    .ghost-piece{opacity:0.3}
+    @media(max-width:900px){.board{grid-template-columns:1fr}.side{width:100%;max-width:400px}}
   </style>
 </head>
 <body tabindex="0">
