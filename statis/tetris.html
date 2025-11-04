@@ -184,20 +184,57 @@
   </div>
 
   <script>
-  // Full Tetris game with restart, overlay and game-over detection
+  /**
+   * Tetris Game - Improved Edition
+   * Enhanced with better security, gameplay features, and UX
+   */
+
+  // ==================== CONFIGURATION ====================
+  const CONFIG = {
+    COLS: 10,
+    ROWS: 20,
+    CELL_SIZE: 28,
+    STORAGE_KEY: 'tetris_v2_data',
+    SETTINGS_KEY: 'tetris_v2_settings'
+  };
+
+  // ==================== GAME STATE ====================
+  const gameState = {
+    arena: null,
+    score: 0,
+    lines: 0,
+    level: 1,
+    highscore: 0,
+    dropCounter: 0,
+    dropInterval: 1000,
+    lastTime: 0,
+    paused: false,
+    running: false,
+    gameStartTime: 0,
+    totalPieces: 0,
+    holdUsed: false,
+    settings: {
+      soundEnabled: true,
+      ghostEnabled: true,
+      gridEnabled: true
+    }
+  };
+
+  // ==================== DOM ELEMENTS ====================
   const canvas = document.getElementById('tetris');
   const ctx = canvas.getContext('2d');
   const nextCanvas = document.getElementById('next');
   const nctx = nextCanvas.getContext('2d');
+  const holdCanvas = document.getElementById('hold');
+  const hctx = holdCanvas.getContext('2d');
   const overlay = document.getElementById('overlay');
   const overlayTitle = document.getElementById('overlay-title');
   const overlayMsg = document.getElementById('overlay-msg');
+  const overlayStart = document.getElementById('overlay-start');
   const overlayRestart = document.getElementById('overlay-restart');
   const overlayClose = document.getElementById('overlay-close');
 
-  const scale = 28; // cell size
-  const COLS = 10, ROWS = 20;
-
+  // ==================== TETROMINO DEFINITIONS ====================
   const colors = [null,'#00f0f0','#0050f0','#f0a000','#f0f000','#00f000','#a000f0','#f04040'];
   const pieces = 'IOTSZJL';
   const shapes = {
@@ -210,19 +247,118 @@
     L: [[0,0,7],[7,7,7],[0,0,0]]
   };
 
-  function createMatrix(w,h){
-    const m = [];
-    while(h--) m.push(new Array(w).fill(0));
-    return m;
-  }
-  let arena = createMatrix(COLS,ROWS);
+  // Wall kick data for SRS (Super Rotation System)
+  const WALL_KICKS = {
+    'JLSTZ': [
+      [[0,0], [-1,0], [-1,1], [0,-2], [-1,-2]], // 0->1
+      [[0,0], [1,0], [1,-1], [0,2], [1,2]],     // 1->2
+      [[0,0], [1,0], [1,1], [0,-2], [1,-2]],    // 2->3
+      [[0,0], [-1,0], [-1,-1], [0,2], [-1,2]]   // 3->0
+    ],
+    'I': [
+      [[0,0], [-2,0], [1,0], [-2,-1], [1,2]],
+      [[0,0], [-1,0], [2,0], [-1,2], [2,-1]],
+      [[0,0], [2,0], [-1,0], [2,1], [-1,-2]],
+      [[0,0], [1,0], [-2,0], [1,-2], [-2,1]]
+    ]
+  };
 
-  // Audio
+  // ==================== PLAYER & PIECES ====================
+  const player = { 
+    pos: {x:0, y:0}, 
+    matrix: null,
+    rotation: 0,
+    type: null
+  };
+  let nextPiece = { matrix: null, type: null };
+  let holdPiece = { matrix: null, type: null };
+
+  // ==================== AUDIO SYSTEM ====================
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
   let audioCtx = null;
-  function ensureAudio(){ if(!audioCtx){ try{ audioCtx = new AudioCtx(); }catch(e){ audioCtx = null; } } }
-  function playLockSound(){ if(!audioCtx) return; const now = audioCtx.currentTime; const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type='sine'; osc.frequency.setValueAtTime(220, now); gain.gain.setValueAtTime(0, now); gain.gain.linearRampToValueAtTime(0.12, now+0.001); gain.gain.exponentialRampToValueAtTime(0.001, now+0.25); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(now); osc.stop(now+0.26); }
-  function playLineClearSound(linesCleared){ if(!audioCtx) return; const now=audioCtx.currentTime; const base=330 + (linesCleared-1)*120; const osc=audioCtx.createOscillator(); const gain=audioCtx.createGain(); osc.type='square'; osc.frequency.setValueAtTime(base, now); gain.gain.setValueAtTime(0.0001, now); gain.gain.exponentialRampToValueAtTime(0.18, now+0.02); gain.gain.exponentialRampToValueAtTime(0.001, now+0.4); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(now); osc.stop(now+0.45); }
+
+  /**
+   * Initialize audio context (user interaction required)
+   */
+  function ensureAudio() { 
+    if(!audioCtx) { 
+      try { 
+        audioCtx = new AudioCtx(); 
+      } catch(e) { 
+        console.error('Audio not supported:', e);
+        audioCtx = null; 
+      } 
+    } 
+  }
+
+  /**
+   * Play lock sound when piece lands
+   */
+  function playLockSound() { 
+    if(!audioCtx || !gameState.settings.soundEnabled) return; 
+    try {
+      const now = audioCtx.currentTime; 
+      const osc = audioCtx.createOscillator(); 
+      const gain = audioCtx.createGain(); 
+      osc.type='sine'; 
+      osc.frequency.setValueAtTime(220, now); 
+      gain.gain.setValueAtTime(0, now); 
+      gain.gain.linearRampToValueAtTime(0.12, now+0.001); 
+      gain.gain.exponentialRampToValueAtTime(0.001, now+0.25); 
+      osc.connect(gain); 
+      gain.connect(audioCtx.destination); 
+      osc.start(now); 
+      osc.stop(now+0.26);
+    } catch(e) {
+      console.error('Audio error:', e);
+    }
+  }
+
+  /**
+   * Play line clear sound
+   */
+  function playLineClearSound(linesCleared) { 
+    if(!audioCtx || !gameState.settings.soundEnabled) return; 
+    try {
+      const now=audioCtx.currentTime; 
+      const base=330 + (linesCleared-1)*120; 
+      const osc=audioCtx.createOscillator(); 
+      const gain=audioCtx.createGain(); 
+      osc.type='square'; 
+      osc.frequency.setValueAtTime(base, now); 
+      gain.gain.setValueAtTime(0.0001, now); 
+      gain.gain.exponentialRampToValueAtTime(0.18, now+0.02); 
+      gain.gain.exponentialRampToValueAtTime(0.001, now+0.4); 
+      osc.connect(gain); 
+      gain.connect(audioCtx.destination); 
+      osc.start(now); 
+      osc.stop(now+0.45);
+    } catch(e) {
+      console.error('Audio error:', e);
+    }
+  }
+
+  /**
+   * Play move sound
+   */
+  function playMoveSound() {
+    if(!audioCtx || !gameState.settings.soundEnabled) return;
+    try {
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(150, now);
+      gain.gain.setValueAtTime(0.05, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now+0.05);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now+0.06);
+    } catch(e) {
+      console.error('Audio error:', e);
+    }
+  }
 
   function drawMatrix(matrix, offset, context, cellSize){
     for(let y=0;y<matrix.length;y++){
