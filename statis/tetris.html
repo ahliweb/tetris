@@ -49,71 +49,133 @@
 <body tabindex="0">
   <div class="wrap">
     <div class="board">
-      <div class="game">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
-          <h1>Tetris Sederhana</h1>
-          <div class="small">Mainkan dengan keyboard atau tombol UI</div>
+      <!-- Left Side Panel -->
+      <div class="side">
+        <div class="panel">
+          <div class="small">Hold Piece</div>
+          <canvas id="hold" class="hold-canvas" width="112" height="112" data-testid="hold-canvas"></canvas>
+          <div class="hint">Tekan C atau klik Hold untuk menyimpan piece</div>
         </div>
-        <canvas id="tetris" width="280" height="560"></canvas>
 
-        <!-- Overlay untuk pesan (game over, pause, instruksi) -->
-        <div id="overlay" class="overlay" style="display:none">
+        <div class="panel">
+          <div class="small">Statistik</div>
+          <div class="stat-row"><span>Waktu Bermain:</span><span id="time-played" data-testid="time-played">0:00</span></div>
+          <div class="stat-row"><span>Total Pieces:</span><span id="total-pieces" data-testid="total-pieces">0</span></div>
+          <div class="stat-row"><span>Pieces/Menit:</span><span id="ppm" data-testid="ppm">0</span></div>
+        </div>
+
+        <div class="panel">
+          <h3 style="margin:0 0 8px;font-size:14px">Pengaturan</h3>
+          <div class="setting-item">
+            <span class="small">Suara</span>
+            <div class="toggle active" id="toggle-sound" data-testid="toggle-sound">
+              <span></span>
+            </div>
+          </div>
+          <div class="setting-item">
+            <span class="small">Ghost Piece</span>
+            <div class="toggle active" id="toggle-ghost" data-testid="toggle-ghost">
+              <span></span>
+            </div>
+          </div>
+          <div class="setting-item">
+            <span class="small">Grid Lines</span>
+            <div class="toggle active" id="toggle-grid" data-testid="toggle-grid">
+              <span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Game Canvas -->
+      <div class="game">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;flex-wrap:wrap">
+          <h1>Tetris Sederhana</h1>
+          <div class="small">v2.0 - Improved Edition</div>
+        </div>
+        <canvas id="tetris" width="280" height="560" data-testid="game-canvas"></canvas>
+
+        <!-- Overlay untuk pesan -->
+        <div id="overlay" class="overlay" style="display:flex">
           <div class="box">
-            <h2 id="overlay-title">Game Over</h2>
-            <p id="overlay-msg">Permainan selesai — area penuh. Tekan Restart untuk bermain lagi.</p>
-            <div style="display:flex;gap:8px;justify-content:center">
-              <button id="overlay-restart">Restart</button>
-              <button id="overlay-close">Tutup</button>
+            <h2 id="overlay-title" data-testid="overlay-title">Selamat Datang!</h2>
+            <div id="overlay-msg" data-testid="overlay-msg">
+              <p><strong>Kontrol Keyboard:</strong></p>
+              <ul>
+                <li>← → : Geser kiri/kanan</li>
+                <li>↑ : Rotasi</li>
+                <li>↓ : Soft drop (turun cepat)</li>
+                <li>Space : Hard drop (langsung jatuh)</li>
+                <li>C : Hold piece</li>
+                <li>P : Pause</li>
+              </ul>
+              <p>Tekan <strong>Start Game</strong> untuk mulai bermain!</p>
+            </div>
+            <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+              <button id="overlay-start" data-testid="overlay-start">Start Game</button>
+              <button id="overlay-restart" data-testid="overlay-restart" style="display:none">Restart</button>
+              <button id="overlay-close" data-testid="overlay-close" style="display:none">Tutup</button>
             </div>
           </div>
         </div>
 
-        <div class="hint small">Controls: ← → (geser), ↑ (rotate), ↓ (soft drop), space (hard drop), P (pause)</div>
+        <div class="hint small">Ghost piece menunjukkan dimana blok akan jatuh</div>
       </div>
 
+      <!-- Right Side Panel -->
       <div class="side">
         <div class="panel">
-          <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
             <div>
               <div class="small">Skor</div>
-              <div id="score" style="font-size:20px">0</div>
+              <div id="score" data-testid="score" style="font-size:20px">0</div>
             </div>
             <div>
               <div class="small">Level</div>
-              <div id="level" style="font-size:20px">1</div>
+              <div id="level" data-testid="level" style="font-size:20px">1</div>
             </div>
             <div>
               <div class="small">Baris</div>
-              <div id="lines" style="font-size:20px">0</div>
+              <div id="lines" data-testid="lines" style="font-size:20px">0</div>
             </div>
           </div>
-          <div style="margin-top:8px">
+          <div style="margin-top:12px">
             <div class="small">High Score</div>
-            <div id="highscore" style="font-size:18px">0</div>
+            <div id="highscore" data-testid="highscore" style="font-size:18px">0</div>
           </div>
         </div>
 
         <div class="panel">
-          <div class="small">Next</div>
-          <canvas id="next" class="next-canvas" width="112" height="112"></canvas>
+          <div class="small">Next Piece</div>
+          <canvas id="next" class="next-canvas" width="112" height="112" data-testid="next-canvas"></canvas>
         </div>
 
         <div class="panel controls">
-          <button id="btn-left">←</button>
-          <button id="btn-rotate">↑</button>
-          <button id="btn-right">→</button>
-          <button id="btn-down">↓</button>
-          <button id="btn-drop">Space</button>
+          <button id="btn-left" data-testid="btn-left">←</button>
+          <button id="btn-rotate" data-testid="btn-rotate">↑</button>
+          <button id="btn-right" data-testid="btn-right">→</button>
+          <button id="btn-down" data-testid="btn-down">↓</button>
+          <button id="btn-drop" data-testid="btn-drop">Space</button>
+          <button id="btn-hold" data-testid="btn-hold">Hold (C)</button>
         </div>
 
         <div class="panel">
-          <button id="btn-pause">Pause</button>
-          <button id="btn-restart">Restart</button>
-          <div class="hint">Tekan P untuk jeda. Permainan berakhir jika blok mencapai batas atas.</div>
+          <button id="btn-pause" data-testid="btn-pause" style="width:100%;margin-bottom:8px">Pause (P)</button>
+          <button id="btn-restart" data-testid="btn-restart" style="width:100%">Restart</button>
+        </div>
+
+        <!-- Touch Controls for Mobile -->
+        <div class="touch-controls panel">
+          <button class="touch-btn" id="touch-left" data-testid="touch-left">←</button>
+          <button class="touch-btn" id="touch-rotate" data-testid="touch-rotate">↻</button>
+          <button class="touch-btn" id="touch-right" data-testid="touch-right">→</button>
+          <button class="touch-btn" id="touch-down" data-testid="touch-down">↓</button>
+          <button class="touch-btn" id="touch-drop" data-testid="touch-drop">⇩</button>
+          <button class="touch-btn" id="touch-hold" data-testid="touch-hold">Hold</button>
         </div>
 
         <footer>
-          <div>Made with ♥ — Tetris sederhana (single file)</div>
+          <div>Made with ♥ — Tetris v2.0 Improved</div>
           <div>(c) 2025 <strong>Tim Ekskul Coding SMAN 2 Pangkalan Bun</strong></div>
           <div>Dimentori oleh <strong>ahliweb.com</strong></div>
         </footer>
