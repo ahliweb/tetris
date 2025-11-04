@@ -31,16 +31,35 @@ tetris/
 
 ## 📚 Deskripsi Proyek
 
-Game Tetris sederhana berbasis **HTML, CSS, dan JavaScript**.
+Game Tetris **Improved Edition** berbasis **HTML, CSS, dan JavaScript**.
 Dikembangkan sebagai materi latihan ekskul coding untuk memahami logika pemrograman dasar, manipulasi DOM, dan animasi web interaktif. 🚀
 
-Fitur utama:
+### ✨ Fitur Utama (v2.0):
 
-* Tampilan grid 10x20 klasik.
-* Sistem skor otomatis.
-* Level dan kecepatan meningkat.
-* Desain responsif dan ringan.
-* 100% **Vanilla JavaScript** (tanpa library eksternal).
+#### Gameplay
+* ✅ Tampilan grid 10x20 klasik
+* ✅ **Hold Piece** - Simpan piece untuk digunakan nanti (tekan C)
+* ✅ **Ghost Piece** - Bayangan menunjukkan dimana piece akan jatuh
+* ✅ **Wall Kick** - Rotasi otomatis saat dekat dinding (SRS system)
+* ✅ Sistem skor otomatis dengan combo
+* ✅ Level dan kecepatan meningkat progresif
+
+#### UI/UX
+* ✅ Welcome screen dengan instruksi lengkap
+* ✅ **Touch Controls** untuk mobile/tablet
+* ✅ **Settings Panel** (on/off: sound, ghost piece, grid lines)
+* ✅ **Game Statistics** (waktu bermain, total pieces, pieces per minute)
+* ✅ Desain responsif 3-kolom (desktop) dan adaptive (mobile)
+* ✅ Animasi smooth dan visual feedback
+* ✅ Tombol UI interaktif dengan hover effects
+
+#### Keamanan & Kode
+* ✅ Validasi localStorage dengan sanitization
+* ✅ Error handling untuk audio context
+* ✅ Komentar lengkap untuk maintainability
+* ✅ Code organization dengan sections
+* ✅ Data-testid attributes untuk automated testing
+* ✅ 100% **Vanilla JavaScript** (tanpa library eksternal)
 
 ---
 
