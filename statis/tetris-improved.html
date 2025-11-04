@@ -1,0 +1,1100 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Tetris Sederhana - Improved Edition</title>
+  <style>
+    :root{--cell:28px;--cols:10;--rows:20}
+    html,body{height:100%;margin:0;font-family:Inter, system-ui, Arial;background:linear-gradient(180deg,#0f172a,#071024);color:#e6eef8}
+    .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:28px}
+    .board{display:grid;grid-template-columns:260px 1fr 260px;gap:20px;align-items:start}
+    @media(max-width:900px){.board{grid-template-columns:1fr;justify-items:center}}
+    .game{background:#061025;padding:12px;border-radius:12px;box-shadow:0 8px 30px rgba(2,6,23,.7);position:relative}
+    canvas#tetris{background:#041024;border:3px solid #00b4ff;box-shadow:0 0 15px rgba(0,180,255,0.4) inset, 0 0 10px rgba(0,180,255,0.3);border-radius:8px;display:block}
+    .overlay{position:absolute;left:12px;top:12px;width:calc(100% - 24px);height:calc(100% - 24px);display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:10}
+    .overlay .box{background:rgba(3,6,12,0.95);border:2px solid rgba(255,255,255,0.06);padding:24px;border-radius:10px;color:#dff0ff;text-align:center;pointer-events:auto;max-width:400px}
+    .overlay .box h2{margin:0 0 12px;font-size:20px}
+    .overlay .box p{margin:0 0 16px;color:#9fb9d6;line-height:1.5}
+    .overlay .box button{cursor:pointer;margin:4px}
+    .overlay .box ul{text-align:left;margin:12px 0;padding-left:20px}
+    .overlay .box li{margin:6px 0;color:#9fb9d6}
+    .side{width:260px}
+    h1{font-size:18px;margin:0 0 8px}
+    .panel{background:linear-gradient(180deg,#071733,#032033);padding:12px;border-radius:10px;margin-bottom:12px;color:#cfe8ff}
+    .small{font-size:13px;color:#9fc6ff}
+    .controls{display:flex;gap:8px;flex-wrap:wrap}
+    button{background:#0b2640;border:1px solid rgba(255,255,255,0.04);color:#dff0ff;padding:8px 12px;border-radius:8px;cursor:pointer;transition:all 0.2s}
+    button:hover{background:#0d3050;transform:translateY(-1px)}
+    button:active{transform:translateY(0)}
+    button:disabled{opacity:0.5;cursor:not-allowed}
+    .hint{font-size:13px;color:#9fb9d6;margin-top:6px}
+    .next-canvas,.hold-canvas{background:#041024;border-radius:8px;display:block;margin-top:8px;border:2px solid #555}
+    footer{font-size:12px;color:#8fb4d9;margin-top:6px;text-align:center}
+    .setting-item{display:flex;justify-content:space-between;align-items:center;margin:8px 0}
+    .toggle{width:48px;height:24px;background:#334;border-radius:12px;position:relative;cursor:pointer;transition:background 0.3s}
+    .toggle.active{background:#0a84ff}
+    .toggle span{position:absolute;width:20px;height:20px;background:#fff;border-radius:50%;top:2px;left:2px;transition:left 0.3s}
+    .toggle.active span{left:26px}
+    .stat-row{display:flex;justify-content:space-between;margin:4px 0;font-size:13px}
+    .touch-controls{display:none;margin-top:12px}
+    @media(max-width:768px){.touch-controls{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}}
+    .touch-btn{padding:16px;font-size:18px;touch-action:manipulation}
+    @keyframes lineClear{0%{opacity:1;background:rgba(255,255,255,0.8)}100%{opacity:0}}
+    .clearing-line{animation:lineClear 0.3s ease-out}
+    .ghost-piece{opacity:0.3}
+    @media(max-width:900px){.board{grid-template-columns:1fr}.side{width:100%;max-width:400px}}
+  </style>
+</head>
+<body tabindex="0">
+  <div class="wrap">
+    <div class="board">
+      <!-- Left Side Panel -->
+      <div class="side">
+        <div class="panel">
+          <div class="small">Hold Piece</div>
+          <canvas id="hold" class="hold-canvas" width="112" height="112" data-testid="hold-canvas"></canvas>
+          <div class="hint">Tekan C atau klik Hold untuk menyimpan piece</div>
+        </div>
+
+        <div class="panel">
+          <div class="small">Statistik</div>
+          <div class="stat-row"><span>Waktu Bermain:</span><span id="time-played" data-testid="time-played">0:00</span></div>
+          <div class="stat-row"><span>Total Pieces:</span><span id="total-pieces" data-testid="total-pieces">0</span></div>
+          <div class="stat-row"><span>Pieces/Menit:</span><span id="ppm" data-testid="ppm">0</span></div>
+        </div>
+
+        <div class="panel">
+          <h3 style="margin:0 0 8px;font-size:14px">Pengaturan</h3>
+          <div class="setting-item">
+            <span class="small">Suara</span>
+            <div class="toggle active" id="toggle-sound" data-testid="toggle-sound">
+              <span></span>
+            </div>
+          </div>
+          <div class="setting-item">
+            <span class="small">Ghost Piece</span>
+            <div class="toggle active" id="toggle-ghost" data-testid="toggle-ghost">
+              <span></span>
+            </div>
+          </div>
+          <div class="setting-item">
+            <span class="small">Grid Lines</span>
+            <div class="toggle active" id="toggle-grid" data-testid="toggle-grid">
+              <span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Game Canvas -->
+      <div class="game">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;flex-wrap:wrap">
+          <h1>Tetris Sederhana</h1>
+          <div class="small">v2.0 - Improved Edition</div>
+        </div>
+        <canvas id="tetris" width="280" height="560" data-testid="game-canvas"></canvas>
+
+        <!-- Overlay untuk pesan -->
+        <div id="overlay" class="overlay" style="display:flex">
+          <div class="box">
+            <h2 id="overlay-title" data-testid="overlay-title">Selamat Datang!</h2>
+            <div id="overlay-msg" data-testid="overlay-msg">
+              <p><strong>Kontrol Keyboard:</strong></p>
+              <ul>
+                <li>← → : Geser kiri/kanan</li>
+                <li>↑ : Rotasi</li>
+                <li>↓ : Soft drop (turun cepat)</li>
+                <li>Space : Hard drop (langsung jatuh)</li>
+                <li>C : Hold piece</li>
+                <li>P : Pause</li>
+              </ul>
+              <p>Tekan <strong>Start Game</strong> untuk mulai bermain!</p>
+            </div>
+            <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+              <button id="overlay-start" data-testid="overlay-start">Start Game</button>
+              <button id="overlay-restart" data-testid="overlay-restart" style="display:none">Restart</button>
+              <button id="overlay-close" data-testid="overlay-close" style="display:none">Tutup</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="hint small">Ghost piece menunjukkan dimana blok akan jatuh</div>
+      </div>
+
+      <!-- Right Side Panel -->
+      <div class="side">
+        <div class="panel">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+            <div>
+              <div class="small">Skor</div>
+              <div id="score" data-testid="score" style="font-size:20px">0</div>
+            </div>
+            <div>
+              <div class="small">Level</div>
+              <div id="level" data-testid="level" style="font-size:20px">1</div>
+            </div>
+            <div>
+              <div class="small">Baris</div>
+              <div id="lines" data-testid="lines" style="font-size:20px">0</div>
+            </div>
+          </div>
+          <div style="margin-top:12px">
+            <div class="small">High Score</div>
+            <div id="highscore" data-testid="highscore" style="font-size:18px">0</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="small">Next Piece</div>
+          <canvas id="next" class="next-canvas" width="112" height="112" data-testid="next-canvas"></canvas>
+        </div>
+
+        <div class="panel controls">
+          <button id="btn-left" data-testid="btn-left">←</button>
+          <button id="btn-rotate" data-testid="btn-rotate">↑</button>
+          <button id="btn-right" data-testid="btn-right">→</button>
+          <button id="btn-down" data-testid="btn-down">↓</button>
+          <button id="btn-drop" data-testid="btn-drop">Space</button>
+          <button id="btn-hold" data-testid="btn-hold">Hold (C)</button>
+        </div>
+
+        <div class="panel">
+          <button id="btn-pause" data-testid="btn-pause" style="width:100%;margin-bottom:8px">Pause (P)</button>
+          <button id="btn-restart" data-testid="btn-restart" style="width:100%">Restart</button>
+        </div>
+
+        <!-- Touch Controls for Mobile -->
+        <div class="touch-controls panel">
+          <button class="touch-btn" id="touch-left" data-testid="touch-left">←</button>
+          <button class="touch-btn" id="touch-rotate" data-testid="touch-rotate">↻</button>
+          <button class="touch-btn" id="touch-right" data-testid="touch-right">→</button>
+          <button class="touch-btn" id="touch-down" data-testid="touch-down">↓</button>
+          <button class="touch-btn" id="touch-drop" data-testid="touch-drop">⇩</button>
+          <button class="touch-btn" id="touch-hold" data-testid="touch-hold">Hold</button>
+        </div>
+
+        <footer>
+          <div>Made with ♥ — Tetris v2.0 Improved</div>
+          <div>(c) 2025 <strong>Tim Ekskul Coding SMAN 2 Pangkalan Bun</strong></div>
+          <div>Dimentori oleh <strong>ahliweb.com</strong></div>
+        </footer>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  /**
+   * Tetris Game - Improved Edition
+   * Enhanced with better security, gameplay features, and UX
+   */
+
+  // ==================== CONFIGURATION ====================
+  const CONFIG = {
+    COLS: 10,
+    ROWS: 20,
+    CELL_SIZE: 28,
+    STORAGE_KEY: 'tetris_v2_data',
+    SETTINGS_KEY: 'tetris_v2_settings'
+  };
+
+  // ==================== GAME STATE ====================
+  const gameState = {
+    arena: null,
+    score: 0,
+    lines: 0,
+    level: 1,
+    highscore: 0,
+    dropCounter: 0,
+    dropInterval: 1000,
+    lastTime: 0,
+    paused: false,
+    running: false,
+    gameStartTime: 0,
+    totalPieces: 0,
+    holdUsed: false,
+    settings: {
+      soundEnabled: true,
+      ghostEnabled: true,
+      gridEnabled: true
+    }
+  };
+
+  // ==================== DOM ELEMENTS ====================
+  const canvas = document.getElementById('tetris');
+  const ctx = canvas.getContext('2d');
+  const nextCanvas = document.getElementById('next');
+  const nctx = nextCanvas.getContext('2d');
+  const holdCanvas = document.getElementById('hold');
+  const hctx = holdCanvas.getContext('2d');
+  const overlay = document.getElementById('overlay');
+  const overlayTitle = document.getElementById('overlay-title');
+  const overlayMsg = document.getElementById('overlay-msg');
+  const overlayStart = document.getElementById('overlay-start');
+  const overlayRestart = document.getElementById('overlay-restart');
+  const overlayClose = document.getElementById('overlay-close');
+
+  // ==================== TETROMINO DEFINITIONS ====================
+  const colors = [null,'#00f0f0','#0050f0','#f0a000','#f0f000','#00f000','#a000f0','#f04040'];
+  const pieces = 'IOTSZJL';
+  const shapes = {
+    I: [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]],
+    O: [[2,2],[2,2]],
+    T: [[0,3,0],[3,3,3],[0,0,0]],
+    S: [[0,4,4],[4,4,0],[0,0,0]],
+    Z: [[5,5,0],[0,5,5],[0,0,0]],
+    J: [[6,0,0],[6,6,6],[0,0,0]],
+    L: [[0,0,7],[7,7,7],[0,0,0]]
+  };
+
+  // Wall kick data for SRS (Super Rotation System)
+  const WALL_KICKS = {
+    'JLSTZ': [
+      [[0,0], [-1,0], [-1,1], [0,-2], [-1,-2]], // 0->1
+      [[0,0], [1,0], [1,-1], [0,2], [1,2]],     // 1->2
+      [[0,0], [1,0], [1,1], [0,-2], [1,-2]],    // 2->3
+      [[0,0], [-1,0], [-1,-1], [0,2], [-1,2]]   // 3->0
+    ],
+    'I': [
+      [[0,0], [-2,0], [1,0], [-2,-1], [1,2]],
+      [[0,0], [-1,0], [2,0], [-1,2], [2,-1]],
+      [[0,0], [2,0], [-1,0], [2,1], [-1,-2]],
+      [[0,0], [1,0], [-2,0], [1,-2], [-2,1]]
+    ]
+  };
+
+  // ==================== PLAYER & PIECES ====================
+  const player = { 
+    pos: {x:0, y:0}, 
+    matrix: null,
+    rotation: 0,
+    type: null
+  };
+  let nextPiece = { matrix: null, type: null };
+  let holdPiece = { matrix: null, type: null };
+
+  // ==================== AUDIO SYSTEM ====================
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  let audioCtx = null;
+
+  /**
+   * Initialize audio context (user interaction required)
+   */
+  function ensureAudio() { 
+    if(!audioCtx) { 
+      try { 
+        audioCtx = new AudioCtx(); 
+      } catch(e) { 
+        console.error('Audio not supported:', e);
+        audioCtx = null; 
+      } 
+    } 
+  }
+
+  /**
+   * Play lock sound when piece lands
+   */
+  function playLockSound() { 
+    if(!audioCtx || !gameState.settings.soundEnabled) return; 
+    try {
+      const now = audioCtx.currentTime; 
+      const osc = audioCtx.createOscillator(); 
+      const gain = audioCtx.createGain(); 
+      osc.type='sine'; 
+      osc.frequency.setValueAtTime(220, now); 
+      gain.gain.setValueAtTime(0, now); 
+      gain.gain.linearRampToValueAtTime(0.12, now+0.001); 
+      gain.gain.exponentialRampToValueAtTime(0.001, now+0.25); 
+      osc.connect(gain); 
+      gain.connect(audioCtx.destination); 
+      osc.start(now); 
+      osc.stop(now+0.26);
+    } catch(e) {
+      console.error('Audio error:', e);
+    }
+  }
+
+  /**
+   * Play line clear sound
+   */
+  function playLineClearSound(linesCleared) { 
+    if(!audioCtx || !gameState.settings.soundEnabled) return; 
+    try {
+      const now=audioCtx.currentTime; 
+      const base=330 + (linesCleared-1)*120; 
+      const osc=audioCtx.createOscillator(); 
+      const gain=audioCtx.createGain(); 
+      osc.type='square'; 
+      osc.frequency.setValueAtTime(base, now); 
+      gain.gain.setValueAtTime(0.0001, now); 
+      gain.gain.exponentialRampToValueAtTime(0.18, now+0.02); 
+      gain.gain.exponentialRampToValueAtTime(0.001, now+0.4); 
+      osc.connect(gain); 
+      gain.connect(audioCtx.destination); 
+      osc.start(now); 
+      osc.stop(now+0.45);
+    } catch(e) {
+      console.error('Audio error:', e);
+    }
+  }
+
+  /**
+   * Play move sound
+   */
+  function playMoveSound() {
+    if(!audioCtx || !gameState.settings.soundEnabled) return;
+    try {
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(150, now);
+      gain.gain.setValueAtTime(0.05, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now+0.05);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now+0.06);
+    } catch(e) {
+      console.error('Audio error:', e);
+    }
+  }
+
+  // ==================== UTILITY FUNCTIONS ====================
+  /**
+   * Create empty matrix
+   */
+  function createMatrix(w, h) {
+    const m = [];
+    while(h--) m.push(new Array(w).fill(0));
+    return m;
+  }
+
+  /**
+   * Validate and sanitize localStorage data
+   */
+  function sanitizeNumber(value, defaultValue = 0, min = 0, max = Infinity) {
+    const num = parseInt(value, 10);
+    if(isNaN(num) || num < min || num > max) return defaultValue;
+    return num;
+  }
+
+  /**
+   * Load settings from localStorage
+   */
+  function loadSettings() {
+    try {
+      const saved = localStorage.getItem(CONFIG.SETTINGS_KEY);
+      if(saved) {
+        const parsed = JSON.parse(saved);
+        if(typeof parsed === 'object') {
+          gameState.settings = {
+            soundEnabled: parsed.soundEnabled !== false,
+            ghostEnabled: parsed.ghostEnabled !== false,
+            gridEnabled: parsed.gridEnabled !== false
+          };
+          updateSettingsUI();
+        }
+      }
+    } catch(e) {
+      console.error('Error loading settings:', e);
+    }
+  }
+
+  /**
+   * Save settings to localStorage
+   */
+  function saveSettings() {
+    try {
+      localStorage.setItem(CONFIG.SETTINGS_KEY, JSON.stringify(gameState.settings));
+    } catch(e) {
+      console.error('Error saving settings:', e);
+    }
+  }
+
+  /**
+   * Update settings UI toggles
+   */
+  function updateSettingsUI() {
+    document.getElementById('toggle-sound').classList.toggle('active', gameState.settings.soundEnabled);
+    document.getElementById('toggle-ghost').classList.toggle('active', gameState.settings.ghostEnabled);
+    document.getElementById('toggle-grid').classList.toggle('active', gameState.settings.gridEnabled);
+  }
+
+  /**
+   * Load high score from localStorage with validation
+   */
+  function loadHighscore() { 
+    try { 
+      const saved = localStorage.getItem(CONFIG.STORAGE_KEY);
+      if(saved) {
+        const data = JSON.parse(saved);
+        gameState.highscore = sanitizeNumber(data.highscore, 0, 0, 999999999);
+      }
+    } catch(e) { 
+      console.error('Error loading highscore:', e);
+      gameState.highscore = 0; 
+    } 
+    document.getElementById('highscore').innerText = gameState.highscore; 
+  }
+
+  /**
+   * Save high score to localStorage
+   */
+  function saveHighscore() { 
+    try { 
+      const data = {
+        highscore: gameState.highscore,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(data)); 
+    } catch(e) {
+      console.error('Error saving highscore:', e);
+    } 
+    document.getElementById('highscore').innerText = gameState.highscore; 
+  }
+
+  /**
+   * Update score display
+   */
+  function updateStats() { 
+    document.getElementById('score').innerText = gameState.score; 
+    document.getElementById('level').innerText = gameState.level; 
+    document.getElementById('lines').innerText = gameState.lines; 
+    if(gameState.score > gameState.highscore) { 
+      gameState.highscore = gameState.score; 
+      saveHighscore(); 
+    }
+    
+    // Update time and statistics
+    if(gameState.running && !gameState.paused) {
+      const elapsed = Math.floor((performance.now() - gameState.gameStartTime) / 1000);
+      const minutes = Math.floor(elapsed / 60);
+      const seconds = elapsed % 60;
+      document.getElementById('time-played').innerText = `${minutes}:${seconds.toString().padStart(2,'0')}`;
+      document.getElementById('total-pieces').innerText = gameState.totalPieces;
+      const ppm = elapsed > 0 ? Math.round((gameState.totalPieces / elapsed) * 60) : 0;
+      document.getElementById('ppm').innerText = ppm;
+    }
+  }
+
+  // ==================== DRAWING FUNCTIONS ====================
+  /**
+   * Draw a tetromino matrix on canvas
+   */
+  function drawMatrix(matrix, offset, context, cellSize, isGhost = false) {
+    for(let y = 0; y < matrix.length; y++) {
+      for(let x = 0; x < matrix[y].length; x++) {
+        const val = matrix[y][x];
+        if(val) {
+          if(isGhost) {
+            context.strokeStyle = colors[val];
+            context.lineWidth = 2;
+            context.strokeRect((x+offset.x)*cellSize+1, (y+offset.y)*cellSize+1, cellSize-3, cellSize-3);
+          } else {
+            context.fillStyle = colors[val];
+            context.fillRect((x+offset.x)*cellSize, (y+offset.y)*cellSize, cellSize-1, cellSize-1);
+            context.strokeStyle = 'rgba(0,0,0,0.2)';
+            context.strokeRect((x+offset.x)*cellSize, (y+offset.y)*cellSize, cellSize-1, cellSize-1);
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Draw grid lines on canvas
+   */
+  function drawGrid() {
+    if(!gameState.settings.gridEnabled) return;
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.lineWidth = 1;
+    for(let x = 0; x <= CONFIG.COLS; x++) {
+      ctx.beginPath();
+      ctx.moveTo(x * CONFIG.CELL_SIZE, 0);
+      ctx.lineTo(x * CONFIG.CELL_SIZE, canvas.height);
+      ctx.stroke();
+    }
+    for(let y = 0; y <= CONFIG.ROWS; y++) {
+      ctx.beginPath();
+      ctx.moveTo(0, y * CONFIG.CELL_SIZE);
+      ctx.lineTo(canvas.width, y * CONFIG.CELL_SIZE);
+      ctx.stroke();
+    }
+  }
+
+  /**
+   * Calculate ghost piece position
+   */
+  function getGhostPosition() {
+    if(!player.matrix) return null;
+    let ghostY = player.pos.y;
+    while(!collide(gameState.arena, {matrix: player.matrix, pos: {x: player.pos.x, y: ghostY + 1}})) {
+      ghostY++;
+    }
+    return ghostY;
+  }
+
+  /**
+   * Main draw function
+   */
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    nctx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
+    hctx.clearRect(0, 0, holdCanvas.width, holdCanvas.height);
+    
+    // Draw grid
+    drawGrid();
+    
+    // Draw arena
+    drawMatrix(gameState.arena, {x:0, y:0}, ctx, CONFIG.CELL_SIZE);
+    
+    // Draw ghost piece
+    if(player.matrix && gameState.settings.ghostEnabled) {
+      const ghostY = getGhostPosition();
+      if(ghostY !== null && ghostY !== player.pos.y) {
+        drawMatrix(player.matrix, {x: player.pos.x, y: ghostY}, ctx, CONFIG.CELL_SIZE, true);
+      }
+    }
+    
+    // Draw current piece
+    if(player.matrix) {
+      drawMatrix(player.matrix, player.pos, ctx, CONFIG.CELL_SIZE);
+    }
+    
+    // Draw next piece
+    if(nextPiece.matrix) {
+      const nx = Math.floor((4 - nextPiece.matrix[0].length) / 2);
+      drawMatrix(nextPiece.matrix, {x:nx, y:1}, nctx, 28);
+    }
+    
+    // Draw hold piece
+    if(holdPiece.matrix) {
+      const hx = Math.floor((4 - holdPiece.matrix[0].length) / 2);
+      drawMatrix(holdPiece.matrix, {x:hx, y:1}, hctx, 28);
+    }
+  }
+
+  // ==================== GAME LOGIC ====================
+  /**
+   * Merge piece into arena
+   */
+  function merge(arenaRef, piece) {
+    piece.matrix.forEach((row, y) => {
+      row.forEach((value, x) => {
+        if(value) arenaRef[y + piece.pos.y][x + piece.pos.x] = value;
+      });
+    });
+    playLockSound();
+  }
+
+  /**
+   * Check collision
+   */
+  function collide(arenaRef, piece) {
+    const m = piece.matrix;
+    for(let y = 0; y < m.length; y++) {
+      for(let x = 0; x < m[y].length; x++) {
+        if(m[y][x]) {
+          const ay = arenaRef[y + piece.pos.y];
+          if(!ay || ay[x + piece.pos.x] !== 0) return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Rotate matrix with wall kick support
+   */
+  function rotate(matrix, dir) {
+    for(let y = 0; y < matrix.length; y++) {
+      for(let x = 0; x < y; x++) {
+        [matrix[x][y], matrix[y][x]] = [matrix[y][x], matrix[x][y]];
+      }
+    }
+    if(dir > 0) matrix.forEach(row => row.reverse()); 
+    else matrix.reverse();
+  }
+
+  /**
+   * Attempt rotation with wall kick
+   */
+  function playerRotate(dir) {
+    if(!player.matrix) return;
+    
+    const originalPos = {x: player.pos.x, y: player.pos.y};
+    const originalRotation = player.rotation;
+    
+    // Create a copy and rotate it
+    const rotatedMatrix = player.matrix.map(row => row.slice());
+    rotate(rotatedMatrix, dir);
+    
+    // Calculate new rotation state
+    const newRotation = (player.rotation + (dir > 0 ? 1 : 3)) % 4;
+    
+    // Get wall kick data
+    let kickData = WALL_KICKS['JLSTZ'];
+    if(player.type === 'I') kickData = WALL_KICKS['I'];
+    if(player.type === 'O') {
+      // O piece doesn't need wall kicks
+      player.matrix = rotatedMatrix;
+      player.rotation = newRotation;
+      return;
+    }
+    
+    const kicks = kickData[originalRotation];
+    
+    // Try each wall kick offset
+    for(let i = 0; i < kicks.length; i++) {
+      player.pos.x = originalPos.x + kicks[i][0];
+      player.pos.y = originalPos.y - kicks[i][1]; // Y is inverted in screen coordinates
+      
+      if(!collide(gameState.arena, {matrix: rotatedMatrix, pos: player.pos})) {
+        player.matrix = rotatedMatrix;
+        player.rotation = newRotation;
+        playMoveSound();
+        return;
+      }
+    }
+    
+    // Restore original position if all kicks failed
+    player.pos.x = originalPos.x;
+    player.pos.y = originalPos.y;
+  }
+
+  /**
+   * Create new piece
+   */
+  function createPiece(type) { 
+    return shapes[type].map(r => r.slice()); 
+  }
+
+  /**
+   * Get random piece type
+   */
+  function randomPiece() {
+    return pieces[Math.floor(Math.random() * pieces.length)];
+  }
+
+  /**
+   * Show overlay message
+   */
+  function showOverlay(title, msg, showStart = false, showRestart = false) {
+    overlayTitle.innerText = title;
+    if(typeof msg === 'string') {
+      overlayMsg.innerHTML = `<p>${msg}</p>`;
+    } else {
+      overlayMsg.innerHTML = msg;
+    }
+    overlay.style.display = 'flex';
+    overlayStart.style.display = showStart ? 'inline-block' : 'none';
+    overlayRestart.style.display = showRestart ? 'inline-block' : 'none';
+    overlayClose.style.display = 'inline-block';
+  }
+
+  /**
+   * Hide overlay
+   */
+  function hideOverlay() { 
+    overlay.style.display = 'none'; 
+  }
+
+  /**
+   * Spawn next piece
+   */
+  function spawnNext() {
+    player.matrix = nextPiece.matrix.map(r => r.slice());
+    player.type = nextPiece.type;
+    player.rotation = 0;
+    player.pos.y = 0;
+    player.pos.x = Math.floor((CONFIG.COLS - player.matrix[0].length) / 2);
+    
+    // Generate new next piece
+    nextPiece.type = randomPiece();
+    nextPiece.matrix = createPiece(nextPiece.type);
+    
+    gameState.totalPieces++;
+    gameState.holdUsed = false;
+    
+    // Check game over
+    if(collide(gameState.arena, player)) {
+      stopGame();
+      showOverlay('Game Over', 
+        `<p>Area penuh — permainan selesai!</p>
+        <p><strong>Skor Akhir: ${gameState.score}</strong></p>
+        <p>Baris: ${gameState.lines} | Level: ${gameState.level}</p>`, 
+        false, true);
+    }
+  }
+
+  /**
+   * Sweep completed lines
+   */
+  function sweepLines() {
+    let rowCount = 0;
+    outer: for(let y = gameState.arena.length - 1; y >= 0; y--) {
+      for(let x = 0; x < gameState.arena[y].length; x++) {
+        if(gameState.arena[y][x] === 0) continue outer;
+      }
+      const row = gameState.arena.splice(y, 1)[0].fill(0);
+      gameState.arena.unshift(row);
+      y++;
+      rowCount++;
+    }
+    
+    if(rowCount > 0) {
+      const points = [0, 40, 100, 300, 1200];
+      gameState.score += points[rowCount] * gameState.level;
+      gameState.lines += rowCount;
+      gameState.level = Math.floor(gameState.lines / 10) + 1;
+      updateStats();
+      playLineClearSound(rowCount);
+    }
+    return rowCount;
+  }
+
+  /**
+   * Hold current piece
+   */
+  function holdCurrentPiece() {
+    if(!player.matrix || gameState.holdUsed) return;
+    
+    if(!holdPiece.matrix) {
+      holdPiece.matrix = createPiece(player.type);
+      holdPiece.type = player.type;
+      spawnNext();
+    } else {
+      const tempMatrix = holdPiece.matrix;
+      const tempType = holdPiece.type;
+      holdPiece.matrix = createPiece(player.type);
+      holdPiece.type = player.type;
+      player.matrix = tempMatrix.map(r => r.slice());
+      player.type = tempType;
+      player.rotation = 0;
+      player.pos.y = 0;
+      player.pos.x = Math.floor((CONFIG.COLS - player.matrix[0].length) / 2);
+    }
+    
+    gameState.holdUsed = true;
+    playMoveSound();
+  }
+
+  // ==================== GAME LOOP ====================
+  /**
+   * Main game update loop
+   */
+  function update(time = 0) {
+    if(!gameState.running) return;
+    
+    if(gameState.paused) { 
+      gameState.lastTime = time; 
+      requestAnimationFrame(update); 
+      return; 
+    }
+    
+    const delta = time - gameState.lastTime;
+    gameState.lastTime = time;
+    gameState.dropCounter += delta;
+    
+    // Calculate drop interval based on level
+    gameState.dropInterval = Math.max(100, 1000 - (gameState.level - 1) * 75);
+    
+    if(gameState.dropCounter > gameState.dropInterval) { 
+      player.pos.y++; 
+      if(collide(gameState.arena, player)) { 
+        player.pos.y--; 
+        merge(gameState.arena, player); 
+        sweepLines(); 
+        spawnNext(); 
+      } 
+      gameState.dropCounter = 0; 
+    }
+    
+    draw();
+    updateStats();
+    requestAnimationFrame(update);
+  }
+
+  /**
+   * Start new game
+   */
+  function startGame() {
+    // Reset state
+    gameState.arena = createMatrix(CONFIG.COLS, CONFIG.ROWS);
+    gameState.score = 0; 
+    gameState.lines = 0; 
+    gameState.level = 1; 
+    gameState.dropCounter = 0; 
+    gameState.lastTime = performance.now(); 
+    gameState.paused = false;
+    gameState.gameStartTime = performance.now();
+    gameState.totalPieces = 0;
+    gameState.holdUsed = false;
+    
+    // Reset pieces
+    nextPiece.type = randomPiece();
+    nextPiece.matrix = createPiece(nextPiece.type);
+    holdPiece.matrix = null;
+    holdPiece.type = null;
+    
+    hideOverlay();
+    loadHighscore();
+    spawnNext();
+    updateStats();
+    
+    if(!gameState.running) { 
+      gameState.running = true; 
+      requestAnimationFrame(update); 
+    }
+    
+    document.getElementById('btn-pause').innerText = 'Pause (P)';
+  }
+
+  /**
+   * Stop game
+   */
+  function stopGame() { 
+    gameState.running = false; 
+  }
+
+  /**
+   * Toggle pause
+   */
+  function togglePause() {
+    if(!gameState.running) return;
+    gameState.paused = !gameState.paused;
+    document.getElementById('btn-pause').innerText = gameState.paused ? 'Resume (P)' : 'Pause (P)';
+    if(gameState.paused) {
+      showOverlay('Game Paused', 'Tekan Resume untuk melanjutkan permainan.', false, false);
+    } else {
+      hideOverlay();
+    }
+  }
+
+  // ==================== INPUT HANDLERS ====================
+  /**
+   * Handle keyboard input
+   */
+  function handleKey(e) { 
+    if(!gameState.running) return; 
+    if(!audioCtx) ensureAudio(); 
+    
+    if(e.key === 'ArrowLeft') { 
+      e.preventDefault();
+      player.pos.x--; 
+      if(collide(gameState.arena, player)) player.pos.x++; 
+      else playMoveSound();
+    } else if(e.key === 'ArrowRight') { 
+      e.preventDefault();
+      player.pos.x++; 
+      if(collide(gameState.arena, player)) player.pos.x--; 
+      else playMoveSound();
+    } else if(e.key === 'ArrowDown') { 
+      e.preventDefault();
+      player.pos.y++; 
+      if(collide(gameState.arena, player)) { 
+        player.pos.y--; 
+        merge(gameState.arena, player); 
+        sweepLines(); 
+        spawnNext(); 
+      } 
+      gameState.dropCounter = 0; 
+    } else if(e.key === 'ArrowUp') { 
+      e.preventDefault();
+      playerRotate(1);
+    } else if(e.code === 'Space') { 
+      e.preventDefault(); 
+      while(!collide(gameState.arena, player)) player.pos.y++; 
+      player.pos.y--; 
+      merge(gameState.arena, player); 
+      sweepLines(); 
+      spawnNext(); 
+      gameState.dropCounter = 0; 
+    } else if(e.key.toLowerCase() === 'c') {
+      e.preventDefault();
+      holdCurrentPiece();
+    } else if(e.key.toLowerCase() === 'p') { 
+      e.preventDefault();
+      togglePause();
+    } 
+  }
+
+  window.addEventListener('keydown', handleKey);
+
+  // ==================== UI BUTTON HANDLERS ====================
+  document.getElementById('btn-left').addEventListener('click', () => { 
+    if(!gameState.running || gameState.paused) return; 
+    if(!audioCtx) ensureAudio(); 
+    player.pos.x--; 
+    if(collide(gameState.arena, player)) player.pos.x++; 
+    else playMoveSound();
+  });
+
+  document.getElementById('btn-right').addEventListener('click', () => { 
+    if(!gameState.running || gameState.paused) return; 
+    if(!audioCtx) ensureAudio(); 
+    player.pos.x++; 
+    if(collide(gameState.arena, player)) player.pos.x--; 
+    else playMoveSound();
+  });
+
+  document.getElementById('btn-rotate').addEventListener('click', () => { 
+    if(!gameState.running || gameState.paused) return; 
+    if(!audioCtx) ensureAudio(); 
+    playerRotate(1);
+  });
+
+  document.getElementById('btn-down').addEventListener('click', () => { 
+    if(!gameState.running || gameState.paused) return; 
+    if(!audioCtx) ensureAudio(); 
+    player.pos.y++; 
+    if(collide(gameState.arena, player)) { 
+      player.pos.y--; 
+      merge(gameState.arena, player); 
+      sweepLines(); 
+      spawnNext(); 
+    } 
+    gameState.dropCounter = 0; 
+  });
+
+  document.getElementById('btn-drop').addEventListener('click', () => { 
+    if(!gameState.running || gameState.paused) return; 
+    if(!audioCtx) ensureAudio(); 
+    while(!collide(gameState.arena, player)) player.pos.y++; 
+    player.pos.y--; 
+    merge(gameState.arena, player); 
+    sweepLines(); 
+    spawnNext(); 
+  });
+
+  document.getElementById('btn-hold').addEventListener('click', () => {
+    if(!gameState.running || gameState.paused) return;
+    if(!audioCtx) ensureAudio();
+    holdCurrentPiece();
+  });
+
+  document.getElementById('btn-pause').addEventListener('click', togglePause);
+
+  document.getElementById('btn-restart').addEventListener('click', () => { 
+    startGame(); 
+  });
+
+  overlayStart.addEventListener('click', () => { 
+    startGame(); 
+  });
+
+  overlayRestart.addEventListener('click', () => { 
+    startGame(); 
+  });
+
+  overlayClose.addEventListener('click', () => { 
+    hideOverlay(); 
+  });
+
+  // ==================== TOUCH CONTROLS ====================
+  document.getElementById('touch-left').addEventListener('click', () => {
+    if(!gameState.running || gameState.paused) return;
+    if(!audioCtx) ensureAudio();
+    player.pos.x--;
+    if(collide(gameState.arena, player)) player.pos.x++;
+    else playMoveSound();
+  });
+
+  document.getElementById('touch-right').addEventListener('click', () => {
+    if(!gameState.running || gameState.paused) return;
+    if(!audioCtx) ensureAudio();
+    player.pos.x++;
+    if(collide(gameState.arena, player)) player.pos.x--;
+    else playMoveSound();
+  });
+
+  document.getElementById('touch-rotate').addEventListener('click', () => {
+    if(!gameState.running || gameState.paused) return;
+    if(!audioCtx) ensureAudio();
+    playerRotate(1);
+  });
+
+  document.getElementById('touch-down').addEventListener('click', () => {
+    if(!gameState.running || gameState.paused) return;
+    if(!audioCtx) ensureAudio();
+    player.pos.y++;
+    if(collide(gameState.arena, player)) {
+      player.pos.y--;
+      merge(gameState.arena, player);
+      sweepLines();
+      spawnNext();
+    }
+    gameState.dropCounter = 0;
+  });
+
+  document.getElementById('touch-drop').addEventListener('click', () => {
+    if(!gameState.running || gameState.paused) return;
+    if(!audioCtx) ensureAudio();
+    while(!collide(gameState.arena, player)) player.pos.y++;
+    player.pos.y--;
+    merge(gameState.arena, player);
+    sweepLines();
+    spawnNext();
+  });
+
+  document.getElementById('touch-hold').addEventListener('click', () => {
+    if(!gameState.running || gameState.paused) return;
+    if(!audioCtx) ensureAudio();
+    holdCurrentPiece();
+  });
+
+  // ==================== SETTINGS TOGGLES ====================
+  document.getElementById('toggle-sound').addEventListener('click', function() {
+    gameState.settings.soundEnabled = !gameState.settings.soundEnabled;
+    this.classList.toggle('active', gameState.settings.soundEnabled);
+    saveSettings();
+  });
+
+  document.getElementById('toggle-ghost').addEventListener('click', function() {
+    gameState.settings.ghostEnabled = !gameState.settings.ghostEnabled;
+    this.classList.toggle('active', gameState.settings.ghostEnabled);
+    saveSettings();
+  });
+
+  document.getElementById('toggle-grid').addEventListener('click', function() {
+    gameState.settings.gridEnabled = !gameState.settings.gridEnabled;
+    this.classList.toggle('active', gameState.settings.gridEnabled);
+    saveSettings();
+  });
+
+  // ==================== INITIALIZATION ====================
+  /**
+   * Focus canvas for keyboard input
+   */
+  window.addEventListener('load', () => { 
+    document.body.focus(); 
+  });
+
+  document.body.addEventListener('click', () => { 
+    document.body.focus(); 
+    if(!audioCtx) ensureAudio(); 
+  });
+
+  /**
+   * Initialize game
+   */
+  function init() {
+    canvas.width = CONFIG.COLS * CONFIG.CELL_SIZE; 
+    canvas.height = CONFIG.ROWS * CONFIG.CELL_SIZE;
+    nextCanvas.width = 4 * 28; 
+    nextCanvas.height = 4 * 28;
+    holdCanvas.width = 4 * 28;
+    holdCanvas.height = 4 * 28;
+    
+    loadSettings();
+    loadHighscore(); 
+    
+    gameState.arena = createMatrix(CONFIG.COLS, CONFIG.ROWS);
+    draw();
+  }
+
+  init();
+  </script>
+</body>
+</html>
