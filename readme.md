@@ -79,6 +79,41 @@ Dikembangkan sebagai materi latihan ekskul coding untuk memahami logika pemrogra
 
 ---
 
+## 🎮 Cara Bermain
+
+### Kontrol Keyboard
+- `←` `→` : Geser kiri/kanan
+- `↑` : Rotasi piece
+- `↓` : Soft drop (turun cepat)
+- `Space` : Hard drop (langsung jatuh)
+- `C` : Hold piece (simpan untuk nanti)
+- `P` : Pause/Resume
+
+### Kontrol UI
+- Gunakan tombol pada panel samping
+- Touch controls tersedia di mobile
+
+### Tips
+- Gunakan ghost piece untuk melihat landing position
+- Hold piece strategi untuk kombo lebih baik
+- Perhatikan next piece untuk planning
+
+---
+
+## 📚 Dokumentasi
+
+Dokumentasi lengkap tersedia:
+
+- **[📖 DOCS_INDEX.md](./DOCS_INDEX.md)** - Navigasi semua dokumentasi
+- **[📋 CHANGELOG.md](./CHANGELOG.md)** - Version history & roadmap
+- **[🔒 SECURITY.md](./SECURITY.md)** - Security practices
+- **[💻 TECHNICAL_DOCS.md](./TECHNICAL_DOCS.md)** - Deep technical dive (16KB!)
+- **[📊 IMPROVEMENTS_SUMMARY.md](./IMPROVEMENTS_SUMMARY.md)** - Complete improvement list
+
+**Total Documentation:** 48KB+ comprehensive docs!
+
+---
+
 ## 🔧 Rencana Pengembangan Lanjutan
 
 Tahap berikutnya akan mencakup:
